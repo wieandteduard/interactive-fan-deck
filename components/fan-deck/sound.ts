@@ -24,7 +24,7 @@ export type Gesture = "turn" | "open" | "close" | "hover";
    floor low enough to let a little of the sheet's body through. Broadband
    noise with a sharp attack and a ceiling at 7 kHz is a hi-hat, and a hi-hat
    is metal no matter how flat its spectrum is. Card is dark. */
-export const VOICINGS = ["click", "crackle", "brush", "flick", "rustle"] as const;
+export const VOICINGS = ["tap", "click", "crackle", "brush", "flick", "rustle"] as const;
 export type Voicing = (typeof VOICINGS)[number];
 
 export interface SoundParams {
@@ -49,12 +49,29 @@ interface Grain {
   tail: [number, number]; // level of the grains after the first
   /* Trim so every voicing lands at the same peak with the master at half. */
   level: number;
-  /* How much of the sheet's low thup goes under each card. */
+  /* How much of the sheet's low thup goes under each card. Zero skips it. */
   body: number;
+  /* Playback rate range: below 1 darkens the noise itself. */
+  rate?: [number, number];
 }
 
 const GRAINS: Record<Voicing, Grain> = {
-  /* One tiny dull tick per card, and not much of it. The default. */
+  /* A fingertip on a leather pad: one soft, dull thud, nothing above about
+     500 Hz, a couple of milliseconds to land and twenty to be gone. No grain
+     on top, no tail. The default. */
+  tap: {
+    count: 1,
+    spacing: [0, 0],
+    attack: [0.002, 0.003],
+    decay: [0.018, 0.028],
+    cut: [520, 380],
+    floor: 60,
+    tail: [1, 1],
+    level: 1.6,
+    body: 0,
+    rate: [0.5, 0.7],
+  },
+  /* One tiny dull tick per card, and not much of it. */
   click: {
     count: 1,
     spacing: [0, 0],
@@ -243,25 +260,22 @@ export function schedule(
   }
 
   if (gesture === "hover") {
-    /* One card face dragging a millimetre across two neighbours: a short
-       soft slide, darker and quieter than anything in the riffle. */
-    for (let g = 0; g < 3; g++) {
-      fire(
-        ctx,
-        bus,
-        {
-          at: t0 + g * rand(0.004, 0.012),
-          cut: rand(1600, 2200),
-          floor: 250,
-          peak: 0.017 * LEVEL * (g === 0 ? 1 : rand(0.3, 0.6)),
-          attack: 0.004,
-          decay: rand(0.03, 0.05),
-          pan: rand(-0.1, 0.1),
-          rate: rand(0.85, 1.15),
-        },
-        live
-      );
-    }
+    /* One card nudged under the finger: the same fingertip, softer. */
+    fire(
+      ctx,
+      bus,
+      {
+        at: t0,
+        cut: rand(420, 520),
+        floor: 70,
+        peak: 0.05 * LEVEL,
+        attack: 0.002,
+        decay: rand(0.016, 0.024),
+        pan: rand(-0.1, 0.1),
+        rate: rand(0.5, 0.65),
+      },
+      live
+    );
     return;
   }
 
@@ -289,13 +303,13 @@ export function schedule(
         bus,
         {
           at,
-          cut: 1600,
-          floor: 200,
-          peak: 0.012 * LEVEL,
-          attack: 0.012,
-          decay: 0.11,
+          cut: 450,
+          floor: 60,
+          peak: 0.02 * LEVEL,
+          attack: 0.004,
+          decay: 0.04,
           pan: -0.18,
-          rate: 0.9,
+          rate: 0.55,
         },
         live
       );
@@ -304,7 +318,7 @@ export function schedule(
     /* The sheet itself, flexing as it lets go: a very low, very short thup
        under each card. It is most of what makes card sound like card rather
        than like sand. */
-    fire(
+    if (G.body > 0) fire(
       ctx,
       bus,
       {
@@ -339,7 +353,7 @@ export function schedule(
           attack: rand(G.attack[0], G.attack[1]) * length,
           decay: (rand(G.decay[0], G.decay[1]) + 0.001 * (k - 1)) * length,
           pan: 0.26 - (0.44 * (k - 1)) / (n - 1) + rand(-0.05, 0.05),
-          rate: rand(0.8, 1.2),
+          rate: rand(...(G.rate ?? [0.8, 1.2])),
         },
         live
       );
@@ -360,13 +374,13 @@ function lock(ctx: BaseAudioContext, bus: AudioNode, at: number, live: Voice[]) 
     bus,
     {
       at,
-      cut: rand(900, 1300),
-      floor: 180,
-      peak: 0.0035 * LEVEL,
+      cut: rand(380, 460),
+      floor: 60,
+      peak: 0.012 * LEVEL,
       attack: 0.003,
-      decay: rand(0.035, 0.05),
+      decay: rand(0.02, 0.03),
       pan: 0,
-      rate: rand(0.7, 0.8),
+      rate: rand(0.5, 0.6),
     },
     live
   );

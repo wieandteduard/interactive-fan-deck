@@ -24,7 +24,7 @@ export type Gesture = "turn" | "open" | "close" | "hover";
    floor low enough to let a little of the sheet's body through. Broadband
    noise with a sharp attack and a ceiling at 7 kHz is a hi-hat, and a hi-hat
    is metal no matter how flat its spectrum is. Card is dark. */
-export const VOICINGS = ["crackle", "brush", "flick", "rustle"] as const;
+export const VOICINGS = ["click", "crackle", "brush", "flick", "rustle"] as const;
 export type Voicing = (typeof VOICINGS)[number];
 
 export interface SoundParams {
@@ -49,9 +49,23 @@ interface Grain {
   tail: [number, number]; // level of the grains after the first
   /* Trim so every voicing lands at the same peak with the master at half. */
   level: number;
+  /* How much of the sheet's low thup goes under each card. */
+  body: number;
 }
 
 const GRAINS: Record<Voicing, Grain> = {
+  /* One tiny dull tick per card, and not much of it. The default. */
+  click: {
+    count: 1,
+    spacing: [0, 0],
+    attack: [0.0015, 0.0025],
+    decay: [0.006, 0.01],
+    cut: [2600, 1600],
+    floor: 300,
+    tail: [1, 1],
+    level: 0.4,
+    body: 0.35,
+  },
   /* Three or four short grains: a dry crackle. */
   crackle: {
     count: 3.5,
@@ -62,6 +76,7 @@ const GRAINS: Record<Voicing, Grain> = {
     floor: 300,
     tail: [0.25, 0.6],
     level: 1,
+    body: 1,
   },
   /* One or two long soft grains: a card sliding, fff. The default. */
   brush: {
@@ -73,6 +88,7 @@ const GRAINS: Record<Voicing, Grain> = {
     floor: 220,
     tail: [0.4, 0.7],
     level: 0.55,
+    body: 1,
   },
   /* One short grain: a card slipping past a thumb. Riffling a deck of cards
      is a run of these. */
@@ -85,6 +101,7 @@ const GRAINS: Record<Voicing, Grain> = {
     floor: 400,
     tail: [1, 1],
     level: 0.5,
+    body: 0.8,
   },
   /* Eight to ten tiny grains scattered over sixty milliseconds: a dense,
      stochastic rustle. */
@@ -97,6 +114,7 @@ const GRAINS: Record<Voicing, Grain> = {
     floor: 300,
     tail: [0.3, 0.9],
     level: 1.8,
+    body: 1,
   },
 };
 
@@ -293,7 +311,7 @@ export function schedule(
         at: at + 0.002,
         cut: rand(280, 380),
         floor: 90,
-        peak: 0.02 * LEVEL * Math.pow(rg, k - 1) * (opening ? 1 : 0.8),
+        peak: 0.02 * LEVEL * G.body * Math.pow(rg, k - 1) * (opening ? 1 : 0.8),
         attack: 0.004,
         decay: rand(0.03, 0.045),
         pan: 0.26 - (0.44 * (k - 1)) / (n - 1),

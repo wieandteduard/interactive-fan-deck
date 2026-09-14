@@ -2,12 +2,11 @@
 
 Fan color deck in code for a more playful web.
 
-A colour fan deck — the riveted stack of paper cards a paint shop hands you —
-rebuilt as a React component. Click the deck and it swings flat, then draws a
-half circle; the cards are paper, with grain, a lit cut edge and a rivet, and
-they sound like paper when they move.
+I rebuilt a color fan deck in code. Used to play with them a lot as a kid.
+Click it and it swings open into a half circle. The cards have paper grain,
+a light cut edge and a rivet, and they sound like paper when they move.
 
-**Live:** https://eduardwieandt.com/playground/fan-deck
+Live: https://eduardwieandt.com/playground/fan-deck
 
 ## Run it
 
@@ -16,48 +15,53 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. In development a [DialKit](https://dialkit.dev)
-panel sits top-right with every parameter on a dial — blades, spread, hinge
-corner, palette, the motion's timings and curves, the sound, and the copy's
-sizes and distances. The panel is development-only; it is not in the
-production build.
+Open http://localhost:3000. In dev there is a [DialKit](https://dialkit.dev)
+panel top right. Every value is on a dial: blades, spread, hinge corner,
+palette, timings, easing, sound, and the sizes and spacing of the copy. The
+panel is dev only. It is not part of the production build.
 
-## How it is built
+## How it works
 
-- **Geometry.** Every dimension hangs off one blade width, which is derived
-  from the radius the fan may sweep, so the deck scales off the viewport
-  with nothing measured in JavaScript. The pivot is the rivet hole, set into
-  the corner of the card rather than its centreline — that off-axis pivot is
-  what gives a real deck its spray.
-- **Motion.** Opening is three beats: the shut deck slides into position while
-  the copy fades, turns flat, then sweeps into the half circle with every gap
-  equal at every frame. Closing runs them back, a little quicker. On a phone
-  the deck stands upright and turns a quarter as it opens, so the fan lies
-  down the long axis of the screen.
-- **Paper.** One seamless scan of coated card (ambientCG Paper001, CC0),
-  high-passed to keep the tooth and lose the mottling, laid on in two passes
-  that cross-fade by how light the stock is. The cut edge is its own layer.
-- **Shadow.** The deck casts one shadow, computed from the silhouette of all
-  its cards together, so overlap cannot pile twelve shadows up. Each card
-  keeps only the contact shade it drops on the card beneath.
-- **Sound.** Synthesised with the Web Audio API — no files. Each card peeling
-  off the one under it is one burst of bandpassed noise; the open is twelve of
-  those laid across the sweep and running down in brightness as the fan slows.
-  Nothing plays before a user gesture. See `components/fan-deck/sound.ts`.
-- **Colour.** Palettes are ramps of stock. The default drifts: one ramp of
-  lightness and chroma in OKLCH whose hue turns a few degrees a second. The
-  headline and the button wear the deck's darkest stop, so they drift with it.
+**Geometry.** Everything is based on one blade width. That width comes from
+how far the fan is allowed to sweep, so the whole deck scales with the
+viewport. Nothing is measured in JavaScript. The pivot is the rivet hole in
+the corner of the card, not the center line. That is what gives a real deck
+its spread.
+
+**Motion.** Opening happens in three steps. The closed deck slides into
+position while the copy fades out. Then it turns flat. Then it sweeps into
+the half circle, with all gaps equal in every frame. Closing is the same in
+reverse, a bit faster. On mobile the deck stands upright and turns 90 degrees
+while it opens, so the fan fits the tall screen.
+
+**Paper.** One seamless scan of coated card (ambientCG Paper001, CC0). High
+passed to keep the grain and lose the blotches. Applied in two layers that
+cross fade depending on how light the card is. The cut edge is its own layer.
+
+**Shadow.** The deck casts one shadow from the outline of all cards together,
+so overlapping cards do not stack twelve shadows. Each card only keeps the
+small contact shadow it drops on the card below.
+
+**Sound.** Made with the Web Audio API, no audio files. Every card that peels
+off the one below is a small crackle of broadband noise. The open is twelve of
+those spread across the sweep, getting darker as the fan slows down. There is
+no bandpass anywhere, so nothing rings. Nothing plays before you interact.
+See `components/fan-deck/sound.ts`.
+
+**Color.** Palettes are ramps. The default one drifts: lightness and chroma
+stay the same, the hue turns a few degrees per second. The headline and the
+button use the darkest card, so they drift with it.
 
 ## Files
 
 ```
 components/fan-deck/FanDeck.tsx         the deck, the page copy, the dials
 components/fan-deck/FanDeck.module.css  geometry, paper, shadow, motion
-components/fan-deck/sound.ts            the paper, synthesised
-public/paper.webp, paper-hi.webp        the stock (ambientCG Paper001, CC0)
+components/fan-deck/sound.ts            the paper sound
+public/paper.webp, paper-hi.webp        the paper texture (ambientCG Paper001, CC0)
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The paper texture is derived from
+MIT, see [LICENSE](LICENSE). The paper texture is based on
 [ambientCG Paper001](https://ambientcg.com/view?id=Paper001), CC0.

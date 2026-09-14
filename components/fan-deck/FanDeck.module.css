@@ -533,7 +533,12 @@
   .page {
     --open-x: 18vw;
     --turn-open: 90deg;
-    --fan-r: min(76vw, 44vh);
+    /* The copy takes the bottom 7vh plus about 220px. Shut, the deck lives in
+       the zone above that and is sized to fit it, so on a short screen it
+       shrinks rather than running into the headline. */
+    --copy-room: 220px;
+    --zone-mid: calc((4vh + 93vh - var(--copy-room)) / 2);
+    --fan-r: min(76vw, 44vh, calc(89vh - var(--copy-room) - 40px));
   }
 
   /* The rivet is in a corner, so centring the rivet puts the card off
@@ -552,10 +557,10 @@
     top: calc(50% + var(--offset-y, 0vh));
   }
   .page[data-stage="shut"][data-hinge^="bottom"] .deck {
-    top: calc(50% + var(--offset-y, 0vh) + var(--blade-l) / 2);
+    top: calc(var(--zone-mid) + var(--blade-l) / 2);
   }
   .page[data-stage="shut"][data-hinge^="top"] .deck {
-    top: calc(50% + var(--offset-y, 0vh) - var(--blade-l) / 2);
+    top: calc(var(--zone-mid) - var(--blade-l) / 2);
   }
 
   .page[data-hinge^="bottom"] .close,

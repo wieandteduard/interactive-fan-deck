@@ -20,8 +20,10 @@ export type Gesture = "turn" | "open" | "close" | "hover";
 
 /* Four readings of what a card sliding off a card sounds like. They differ
    in how many grains make one card, how long each lasts and how sharp it
-   starts — the three things that decide whether noise reads as paper, static,
-   or a snap. Pick by ear. */
+   starts. All of them are dull on purpose: nothing above about 3 kHz and a
+   floor low enough to let a little of the sheet's body through. Broadband
+   noise with a sharp attack and a ceiling at 7 kHz is a hi-hat, and a hi-hat
+   is metal no matter how flat its spectrum is. Card is dark. */
 export const VOICINGS = ["crackle", "brush", "flick", "rustle"] as const;
 export type Voicing = (typeof VOICINGS)[number];
 
@@ -50,37 +52,37 @@ interface Grain {
 }
 
 const GRAINS: Record<Voicing, Grain> = {
-  /* Four or five short broadband grains: a dry crackle. */
+  /* Three or four short grains: a dry crackle. */
   crackle: {
-    count: 4.5,
-    spacing: [0.003, 0.011],
-    attack: [0.002, 0.004],
-    decay: [0.016, 0.03],
-    cut: [7000, 3000],
-    floor: 800,
+    count: 3.5,
+    spacing: [0.005, 0.014],
+    attack: [0.004, 0.007],
+    decay: [0.025, 0.045],
+    cut: [3200, 1800],
+    floor: 300,
     tail: [0.25, 0.6],
     level: 1,
   },
-  /* One or two long soft grains: a card sliding, shh. */
+  /* One or two long soft grains: a card sliding, fff. The default. */
   brush: {
     count: 1.5,
     spacing: [0.02, 0.04],
-    attack: [0.01, 0.016],
-    decay: [0.07, 0.12],
-    cut: [4200, 2200],
-    floor: 450,
+    attack: [0.01, 0.018],
+    decay: [0.07, 0.13],
+    cut: [2600, 1500],
+    floor: 220,
     tail: [0.4, 0.7],
-    level: 0.5,
+    level: 0.55,
   },
-  /* One very short bright grain: a card snapping past a thumb. Riffling a
-     deck of cards is a run of these. */
+  /* One short grain: a card slipping past a thumb. Riffling a deck of cards
+     is a run of these. */
   flick: {
     count: 1,
     spacing: [0, 0],
-    attack: [0.0012, 0.002],
-    decay: [0.007, 0.012],
-    cut: [9000, 4500],
-    floor: 1200,
+    attack: [0.002, 0.0035],
+    decay: [0.012, 0.02],
+    cut: [4200, 2400],
+    floor: 400,
     tail: [1, 1],
     level: 0.5,
   },
@@ -89,10 +91,10 @@ const GRAINS: Record<Voicing, Grain> = {
   rustle: {
     count: 9,
     spacing: [0.002, 0.009],
-    attack: [0.001, 0.003],
-    decay: [0.005, 0.011],
-    cut: [5500, 2800],
-    floor: 700,
+    attack: [0.002, 0.004],
+    decay: [0.008, 0.016],
+    cut: [3000, 1800],
+    floor: 300,
     tail: [0.3, 0.9],
     level: 1.8,
   },
@@ -231,9 +233,9 @@ export function schedule(
         bus,
         {
           at: t0 + g * rand(0.004, 0.012),
-          cut: rand(2600, 3400),
-          floor: 700,
-          peak: 0.011 * LEVEL * (g === 0 ? 1 : rand(0.3, 0.6)),
+          cut: rand(1600, 2200),
+          floor: 250,
+          peak: 0.017 * LEVEL * (g === 0 ? 1 : rand(0.3, 0.6)),
           attack: 0.004,
           decay: rand(0.03, 0.05),
           pan: rand(-0.1, 0.1),
@@ -269,8 +271,8 @@ export function schedule(
         bus,
         {
           at,
-          cut: 2400,
-          floor: 500,
+          cut: 1600,
+          floor: 200,
           peak: 0.012 * LEVEL,
           attack: 0.012,
           decay: 0.11,
@@ -281,6 +283,24 @@ export function schedule(
       );
       continue;
     }
+    /* The sheet itself, flexing as it lets go: a very low, very short thup
+       under each card. It is most of what makes card sound like card rather
+       than like sand. */
+    fire(
+      ctx,
+      bus,
+      {
+        at: at + 0.002,
+        cut: rand(280, 380),
+        floor: 90,
+        peak: 0.02 * LEVEL * Math.pow(rg, k - 1) * (opening ? 1 : 0.8),
+        attack: 0.004,
+        decay: rand(0.03, 0.045),
+        pan: 0.26 - (0.44 * (k - 1)) / (n - 1),
+        rate: rand(0.55, 0.7),
+      },
+      live
+    );
     const grains = Math.max(1, Math.round(G.count + rand(-0.5, 0.5)));
     let offset = 0;
     for (let g = 0; g < grains; g++) {

@@ -30,7 +30,7 @@
   /* How far the whole fan is turned once it is out of the shut position. On
      a phone this is a quarter turn, taken during the align beat. */
   --turn-open: 0deg;
-  --fan-r: calc(min(40vw, 54vh) * 0.8);
+  --fan-r: calc(min(40vw, 54dvh) * 0.8);
   --blade-l: calc(var(--fan-r) / 1.03);
   --blade-w: calc(var(--blade-l) / 4.34);
   --radius: calc(var(--blade-w) * 0.21);
@@ -111,7 +111,7 @@
      moved. */
   backface-visibility: hidden;
   will-change: transform;
-  top: calc(50% + var(--offset-y, 0vh) + var(--copy-y, 0vh));
+  top: calc(50% + var(--offset-y, 0dvh) + var(--copy-y, 0dvh));
   transform: translateY(-50%) translateZ(0);
   transition:
     opacity var(--align, 520ms) var(--ease-out-quad, ease),
@@ -241,13 +241,13 @@
    full radius down. */
 .page[data-hinge^="bottom"] .close {
   top: calc(
-    50% + var(--offset-y, 0vh) + (var(--fan-r) + var(--blade-w)) / 2 + 4vh
+    50% + var(--offset-y, 0dvh) + (var(--fan-r) + var(--blade-w)) / 2 + 4dvh
   );
 }
 .page[data-hinge^="top"] .close {
   top: calc(
-    50% + var(--offset-y, 0vh) - (var(--fan-r) - var(--blade-w)) / 2 +
-      var(--fan-r) + 4vh
+    50% + var(--offset-y, 0dvh) - (var(--fan-r) - var(--blade-w)) / 2 +
+      var(--fan-r) + 4dvh
   );
 }
 
@@ -364,10 +364,10 @@
 }
 
 .page[data-hinge^="bottom"] .deck {
-  top: calc(50% + var(--offset-y, 0vh) + (var(--fan-r) - var(--blade-w)) / 2);
+  top: calc(50% + var(--offset-y, 0dvh) + (var(--fan-r) - var(--blade-w)) / 2);
 }
 .page[data-hinge^="top"] .deck {
-  top: calc(50% + var(--offset-y, 0vh) - (var(--fan-r) - var(--blade-w)) / 2);
+  top: calc(50% + var(--offset-y, 0dvh) - (var(--fan-r) - var(--blade-w)) / 2);
 }
 
 /* The one point every blade turns around. Zero-size, so its own origin is
@@ -540,12 +540,12 @@
   .page {
     --open-x: 18vw;
     --turn-open: 90deg;
-    /* The copy takes the bottom 7vh plus about 220px. Shut, the deck lives in
+    /* The copy takes the bottom 7dvh plus about 220px. Shut, the deck lives in
        the zone above that and is sized to fit it, so on a short screen it
        shrinks rather than running into the headline. */
     --copy-room: 220px;
-    --zone-mid: calc((4vh + 93vh - var(--copy-room)) / 2);
-    --fan-r: min(76vw, 44vh, calc(89vh - var(--copy-room) - 40px));
+    --zone-mid: calc((4dvh + 93dvh - var(--copy-room)) / 2);
+    --fan-r: min(76vw, 44dvh, calc(89dvh - var(--copy-room) - 40px));
   }
 
   /* The rivet is in a corner, so centring the rivet puts the card off
@@ -561,7 +561,7 @@
      the fan is symmetric about the rivet, so the rivet goes to the middle. */
   .page[data-hinge^="bottom"] .deck,
   .page[data-hinge^="top"] .deck {
-    top: calc(50% + var(--offset-y, 0vh));
+    top: calc(50% + var(--offset-y, 0dvh));
   }
   .page[data-stage="shut"][data-hinge^="bottom"] .deck {
     top: calc(var(--zone-mid) + var(--blade-l) / 2);
@@ -573,7 +573,7 @@
   .page[data-hinge^="bottom"] .close,
   .page[data-hinge^="top"] .close {
     left: calc(var(--open-x) + (var(--fan-r) - var(--blade-w)) / 2);
-    top: calc(50% + var(--offset-y, 0vh) + var(--fan-r) + 3vh);
+    top: calc(50% + var(--offset-y, 0dvh) + var(--fan-r) + 3dvh);
   }
 
   /* Everything on one axis: the copy centred under the deck, the block
@@ -585,7 +585,7 @@
     max-width: 320px;
     text-align: center;
     top: auto;
-    bottom: 7vh;
+    bottom: 7dvh;
     transform: translateX(-50%) translateZ(0);
     transform-origin: 50% 50%;
   }

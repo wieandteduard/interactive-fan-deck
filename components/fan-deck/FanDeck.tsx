@@ -251,9 +251,9 @@ export function FanDeck() {
      from the subcopy down to the button — each dial owns exactly one gap. */
   const copy = useDialKit("Copy", {
     x: [53.5, 40, 70, 0.5],
-    /* vh; moves the whole composition — deck and copy together. */
+    /* dvh; moves the whole composition — deck and copy together. */
     y: [-4, -20, 20, 0.5],
-    /* vh; nudges the copy alone against the deck. */
+    /* dvh; nudges the copy alone against the deck. */
     copyY: [-3, -20, 20, 0.5],
     h1: [48, 20, 72, 1],
     h1Leading: [0.94, 0.75, 1.2, 0.01],
@@ -507,8 +507,8 @@ export function FanDeck() {
           "--btn-face-hover": rgb(face, 0.72),
           "--btn-face-active": rgb(pressed),
           "--copy-x": `${copy.x}%`,
-          "--offset-y": `${copy.y}vh`,
-          "--copy-y": `${copy.copyY}vh`,
+          "--offset-y": `${copy.y}dvh`,
+          "--copy-y": `${copy.copyY}dvh`,
           "--h1": `${copy.h1}px`,
           "--h1-lh": copy.h1Leading.toFixed(2),
           "--h1-ls": `${(copy.h1Tracking / 100).toFixed(3)}em`,

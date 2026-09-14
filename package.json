@@ -1,0 +1,30 @@
+{
+  "name": "interactive-fan-deck",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fan color deck in code for a more playful web.",
+  "license": "MIT",
+  "author": "Eduard Wieandt",
+  "repository": "github:wieandteduard/interactive-fan-deck",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "dialkit": "^1.4.3",
+    "motion": "^13.1.1",
+    "next": "^16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.4",
+    "typescript": "^5"
+  }
+}

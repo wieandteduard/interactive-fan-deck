@@ -1,0 +1,540 @@
+/* A colour fan deck: identical blades riveted through one corner, swung open
+   into a half circle. Every dimension hangs off --blade-w, which is itself
+   derived from the radius the fan is allowed to sweep, so the whole thing
+   scales with the viewport without a single measurement in JS. */
+
+/* Registered so the shadows can fade with the fan instead of snapping. */
+@property --fan-sh {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --cast {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* How far the deck is off the sheet. Scales the throw of every shadow stop. */
+@property --rise {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+.page {
+  --pivot-x: 45%;
+  /* Where the rivet goes once the deck is open and the copy has cleared. */
+  --open-x: 50%;
+  /* How far the whole fan is turned once it is out of the shut position. On
+     a phone this is a quarter turn, taken during the align beat. */
+  --turn-open: 0deg;
+  --fan-r: calc(min(40vw, 54vh) * 0.8);
+  --blade-l: calc(var(--fan-r) / 1.03);
+  --blade-w: calc(var(--blade-l) / 4.34);
+  --radius: calc(var(--blade-w) * 0.21);
+  --hole-r: calc(var(--blade-w) * 0.0649);
+  --inset: calc(var(--blade-w) * 0.155);
+  --ease: var(--ease-out-quint, cubic-bezier(0.23, 1, 0.32, 1));
+
+  background: #fff;
+  color: rgba(0, 0, 0, 0.72);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 400;
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── The corner the rivet goes through ──────────────────
+   Right/left decides which long edge the hole hugs, top/bottom which end —
+   and with it whether the deck opens upward off its pivot or hangs below it. */
+.page[data-hinge$="right"] {
+  --hole-x: calc(var(--blade-w) - var(--inset));
+}
+.page[data-hinge$="left"] {
+  --hole-x: var(--inset);
+}
+.page[data-hinge^="bottom"] {
+  --hole-y: calc(var(--blade-l) - var(--inset));
+}
+.page[data-hinge^="top"] {
+  --hole-y: var(--inset);
+}
+
+/* ── Copy ───────────────────────────────────────────────
+   Sits to the right of the shut deck, under it in the stack, and gets out of
+   the way once the blades sweep across it. Measurements are the Figma frame's,
+   scaled off the viewport so the relationship to the deck holds. */
+.copy {
+  --copy-scale: 1;
+  display: flex;
+  flex-direction: column;
+  left: var(--copy-x);
+  max-width: 364px;
+  position: absolute;
+  transform-origin: 0 50%;
+  top: calc(50% + var(--offset-y, 0vh) + var(--copy-y, 0vh));
+  transform: translateY(-50%);
+  transition:
+    opacity var(--align, 520ms) var(--ease-out-quad, ease),
+    transform var(--align, 520ms) var(--ease-out-quad, ease);
+  z-index: 2;
+}
+
+/* Going, the copy also shrinks a touch — it recedes rather than switches off,
+   which reads as the deck coming forward past it. */
+.page[data-copy="hidden"] .copy {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-50% + 4px)) scale(0.94);
+}
+
+.title {
+  color: var(--btn-face, #000);
+  transition: color 400ms linear;
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: calc(var(--h1) * var(--copy-scale));
+  font-weight: 500;
+  letter-spacing: var(--h1-ls);
+  line-height: var(--h1-lh);
+  margin: 0 0 calc(var(--h1-gap) * var(--copy-scale));
+}
+
+.lede {
+  color: var(--ink-lede, rgba(0, 0, 0, 0.6));
+  transition: color 600ms linear;
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: calc(var(--lede) * var(--copy-scale));
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0 0 calc(var(--btn-gap) * var(--copy-scale));
+}
+
+.star {
+  align-items: center;
+  align-self: flex-start;
+  backface-visibility: hidden;
+  background: var(--btn-face, #262626);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.91);
+  display: inline-flex;
+  position: relative;
+  transform: translateZ(0);
+  will-change: transform;
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-feature-settings: "ss01" 1, "ss03" 1, "cv06" 1, "cv01" 1;
+  font-size: var(--btn);
+  font-weight: 500;
+  line-height: 1.34;
+  padding: calc(var(--btn) * 0.67) calc(var(--btn) * 1.34);
+  text-decoration: none;
+  transition:
+    background 400ms linear,
+    color 160ms var(--ease-out-quad, ease),
+    transform 220ms var(--ease-out-quart, ease);
+}
+
+.mark {
+  flex: none;
+  height: calc(var(--btn) * 1.2);
+  margin-right: calc(var(--btn) * 0.55);
+  width: calc(var(--btn) * 1.2);
+}
+
+.star:hover {
+  background: var(--btn-face-hover, #000);
+  color: #fff;
+  transform: translateZ(0) scale(1.04);
+  transition-duration: 160ms, 160ms, 220ms;
+}
+
+/* Pressed: it gives under the finger, and the transition shortens so the
+   press reads as immediate rather than eased. */
+.star:active {
+  background: var(--btn-face-active, #3a3a3a);
+  color: rgba(255, 255, 255, 0.8);
+  transform: translateZ(0) scale(0.96);
+  transition-duration: 80ms;
+}
+
+.stars {
+  color: rgba(0, 0, 0, 0.45);
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 12px 0 0;
+}
+
+.star:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.4);
+  outline-offset: 3px;
+}
+
+/* ── Close ──────────────────────────────────────────────
+   A muted pill under the open fan, centred on the pivot. It only exists while
+   the deck is open; shut, there is nothing to close. */
+.close {
+  background: rgba(0, 0, 0, 0.06);
+  border: 0;
+  border-radius: 9999px;
+  color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  left: var(--open-x);
+  line-height: 1.34;
+  opacity: 0;
+  padding: 8px 16px;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, 6px);
+  transition:
+    background 160ms var(--ease-out-quad, ease),
+    color 160ms var(--ease-out-quad, ease),
+    opacity 320ms var(--ease-out-quad, ease),
+    transform 320ms var(--ease-out-quad, ease);
+  z-index: 2;
+}
+
+/* Below the lowest blades: for a bottom hinge those are the two horizontal
+   cards, one blade width under the pivot; for a top hinge the fan hangs a
+   full radius down. */
+.page[data-hinge^="bottom"] .close {
+  top: calc(
+    50% + var(--offset-y, 0vh) + (var(--fan-r) + var(--blade-w)) / 2 + 4vh
+  );
+}
+.page[data-hinge^="top"] .close {
+  top: calc(
+    50% + var(--offset-y, 0vh) - (var(--fan-r) - var(--blade-w)) / 2 +
+      var(--fan-r) + 4vh
+  );
+}
+
+.page[data-open="true"] .close {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.close:active {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.close:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 3px;
+}
+
+/* ── Stage ──────────────────────────────────────────── */
+/* No z-index here on purpose: the stage must not become a stacking context,
+   so the deck inside it can paint above the copy while the stage itself stays
+   under it — that is what lets the copy's button take the pointer. */
+.stage {
+  flex: 1;
+  position: relative;
+}
+
+/* The deck: positioned on the rivet, carrying the shadow and the hover float.
+   A half-open deck reaches --fan-r away from the rivet and only one blade
+   width back past it, so the rivet sits off-centre by half that difference to
+   land the fan in the middle. Open, it slides across to --open-x — the copy
+   has cleared by then — over the same window the blades sweep in. */
+.deck {
+  cursor: pointer;
+  left: var(--pivot-x);
+  position: absolute;
+  transform-origin: center;
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+  /* Both inputs to the filter interpolate, so the filter itself follows
+     continuously and needs no transition of its own. */
+  transition:
+    left var(--align, 520ms) var(--ease-out-quart, ease),
+    top var(--align, 520ms) var(--ease-out-quart, ease),
+    transform var(--hover, 560ms) var(--ease-out-quart, ease),
+    --cast var(--hover, 560ms) var(--ease-out-quart, ease),
+    --rise var(--hover, 560ms) var(--ease-out-quart, ease),
+    --fan-sh var(--swing, 1000ms) var(--ease, ease);
+
+  /* The deck's whole shadow — contact, mid and ambient — belongs to the deck,
+     not to each blade. Shut, the blades' own contact shadows are zeroed, so
+     this is the only thing holding the stack down onto the sheet.
+     drop-shadow works off the alpha of everything the deck paints, so twelve
+     overlapping blades cast one silhouette instead of twelve shadows piled up
+     on each other — which is what was bruising the middle of the fan. And
+     because it is computed after the pivot's rotation, it always falls down
+     the page, whichever way the fan is turned. */
+  filter:
+    /* Contact. Only while the deck is shut: then it is one thick block and
+       wants a crisp edge under it. Open, the silhouette is a splayed fan and a
+       tight shadow would just trace every notch between the tips — so this
+       fades out exactly as the blades' own contact shading fades in. */
+    drop-shadow(
+      0 calc(var(--blade-w) * 0.022 * var(--rise))
+        calc(var(--blade-w) * 0.05 * var(--rise))
+        rgb(0 0 0 / calc(0.18 * (1 - var(--fan-sh)) * var(--cast)))
+    )
+    /* The ground shadow, in both states — soft enough to stay a shadow rather
+       than an outline. */
+    drop-shadow(
+      0 calc(var(--blade-w) * 0.05 * var(--rise))
+        calc(var(--blade-w) * 0.1 * var(--rise))
+        rgb(0 0 0 / calc(0.055 * var(--cast)))
+    )
+    drop-shadow(
+      0 calc(var(--blade-w) * 0.14 * var(--rise))
+        calc(var(--blade-w) * 0.24 * var(--rise))
+        rgb(0 0 0 / calc(0.06 * var(--cast)))
+    )
+    drop-shadow(
+      0 calc(var(--blade-w) * 0.34 * var(--rise))
+        calc(var(--blade-w) * 0.56 * var(--rise))
+        rgb(0 0 0 / calc(0.075 * var(--cast)))
+    );
+}
+
+.deck:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 12px;
+}
+
+/* Anywhere but home: aligned, turning, or open. */
+.page:not([data-stage="shut"]) .deck {
+  left: var(--open-x);
+}
+
+/* Shut, the deck lifts off the sheet under the cursor before you open it —
+   a little bigger, a little further from its own shadow. Lifting throws the
+   shadow further and softens it — that is the cue, not a darker one. */
+.page[data-stage="shut"] .deck:hover {
+  --rise: 1.9;
+  --cast: 0.82;
+  transform: translateY(calc(var(--blade-w) * -0.08)) scale(var(--float, 1.032));
+}
+
+.page[data-hinge^="bottom"] .deck {
+  top: calc(50% + var(--offset-y, 0vh) + (var(--fan-r) - var(--blade-w)) / 2);
+}
+.page[data-hinge^="top"] .deck {
+  top: calc(50% + var(--offset-y, 0vh) - (var(--fan-r) - var(--blade-w)) / 2);
+}
+
+/* The one point every blade turns around. Zero-size, so its own origin is
+   the rivet, and the only thing it does is turn the whole fan on a phone —
+   from upright when shut to on its side once it leaves home, over the same
+   beat the deck slides across in. */
+.pivot {
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: rotate(0deg);
+  transform-origin: 0 0;
+  transition: transform var(--align, 520ms) var(--ease-out-quart, ease);
+}
+
+.page:not([data-stage="shut"]) .pivot {
+  transform: rotate(var(--turn-open));
+}
+
+/* ── Blade ──────────────────────────────────────────── */
+/* Offset so the rivet hole — not the blade's corner or centre — lands on the
+   pivot, which is what gives a real deck its slightly off-axis spray. */
+.blade {
+  height: var(--blade-l);
+  left: calc(-1 * var(--hole-x));
+  position: absolute;
+  top: calc(-1 * var(--hole-y));
+  transform: rotate(var(--angle));
+  transform-origin: var(--hole-x) var(--hole-y);
+  transition: transform var(--swing, 1000ms) var(--ease, ease);
+  width: var(--blade-w);
+  will-change: transform;
+}
+
+.body {
+  background: var(--colour);
+  border-radius: var(--radius);
+  /* iOS-style continuous corners. Where corner-shape isn't supported this is
+     simply ignored and the corners stay circular, which is the old look. */
+  corner-shape: squircle;
+  inset: 0;
+  isolation: isolate;
+  position: absolute;
+  transition:
+    transform var(--hover, 340ms) var(--ease-out-quart, ease),
+    background-color 400ms linear,
+    --fan-sh 520ms var(--ease-out-quad, ease);
+
+  /* Only the near-contact stops of Figma's shadow stay on the blade — the shade
+     one sheet drops on the sheet under it. The wide ambient falloff moved up to
+     the pivot, where it gets cast once. --fan-sh still fades these as the gap
+     between blades closes, so a shut deck doesn't stack twelve of them. */
+  box-shadow:
+    0 calc(var(--blade-w) * 0.00866) calc(var(--blade-w) * 0.01628)
+      rgb(0 0 0 / calc(0.02 * var(--fan-sh))),
+    0 calc(var(--blade-w) * 0.021) calc(var(--blade-w) * 0.03896)
+      rgb(0 0 0 / calc(0.028 * var(--fan-sh))),
+    0 calc(var(--blade-w) * 0.048) calc(var(--blade-w) * 0.088)
+      rgb(0 0 0 / calc(0.032 * var(--fan-sh)));
+}
+
+/* Open, each blade answers the cursor on its own: a hair further out of the
+   deck, along its own length. Just enough to feel the thing under your hand. */
+.page[data-open="true"] .blade:hover .body {
+  transform: translateY(var(--lift, -1.4%));
+}
+
+/* The code sits just off the tip of the blade, clear of the deck, but still
+   inside the rotated element — so it lines up with its own blade the way a tab
+   on a sample book does. Which end is "the tip" flips with the hinge. */
+.code {
+  color: rgba(0, 0, 0, 0.62);
+  font-family: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  left: 0;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  transition: opacity 180ms var(--ease-out-quad, ease);
+}
+
+.page[data-hinge^="bottom"] .code {
+  bottom: calc(100% + var(--blade-w) * 0.13);
+}
+.page[data-hinge^="top"] .code {
+  top: calc(100% + var(--blade-w) * 0.13);
+}
+
+.page[data-open="true"] .blade:hover .code {
+  opacity: 1;
+}
+
+/* No hover, no hover labels. On touch a tapped card keeps a sticky :hover,
+   and on a phone the turned fan carries half its codes past 90°, upside down. */
+@media (hover: none) {
+  .code {
+    display: none;
+  }
+}
+
+/* The paper itself: the sheet scan from Figma, held far larger than the blade
+   so the fibre stays coarse. Two passes of the same fibres — multiplied in, it
+   shows on the pale tints; screened in, it shows on the deep ones. Each is a
+   no-op at the end of the ramp the other one covers. */
+.grain,
+.grainHi {
+  background-position: var(--texture);
+  corner-shape: squircle;
+  background-repeat: repeat;
+  background-size: auto calc(var(--blade-l) * 0.55);
+  border-radius: inherit;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* The cut edge, as its own layer over the grain rather than an inset shadow —
+   so the fibre doesn't dull it and it can stay brighter than the face. */
+.rim {
+  border: 1px solid var(--edge);
+  border-radius: inherit;
+  corner-shape: squircle;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.grain {
+  background-image: url("/paper.webp");
+  mix-blend-mode: multiply;
+  opacity: var(--grain);
+}
+
+.grainHi {
+  background-image: url("/paper-hi.webp");
+  mix-blend-mode: screen;
+  opacity: var(--grain-hi);
+}
+
+/* ── Rivet ──────────────────────────────────────────── */
+.rivet {
+  height: calc(var(--hole-r) * 2);
+  left: calc(-1 * var(--hole-r));
+  position: absolute;
+  top: calc(-1 * var(--hole-r));
+  width: calc(var(--hole-r) * 2);
+  z-index: 1;
+}
+
+.rivet svg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blade {
+    transition: none;
+  }
+}
+
+@media (max-width: 760px) {
+  /* On a phone the deck stands upright in the middle, as on desktop, and
+     bigger. Opening, it turns a quarter clockwise as it slides left — so the
+     half circle opens to the right with its long axis down the screen, where
+     the room is — and turns back upright on the way home. */
+  .page {
+    --pivot-x: 50%;
+    --open-x: 21vw;
+    --turn-open: 90deg;
+    --fan-r: min(62vw, 40vh);
+  }
+
+  /* Shut and upright, the deck is centred on its own length; once turned,
+     the fan is symmetric about the rivet, so the rivet goes to the middle. */
+  .page[data-hinge^="bottom"] .deck,
+  .page[data-hinge^="top"] .deck {
+    top: calc(50% + var(--offset-y, 0vh));
+  }
+  .page[data-stage="shut"][data-hinge^="bottom"] .deck {
+    top: calc(50% + var(--offset-y, 0vh) + var(--blade-l) / 2);
+  }
+  .page[data-stage="shut"][data-hinge^="top"] .deck {
+    top: calc(50% + var(--offset-y, 0vh) - var(--blade-l) / 2);
+  }
+
+  .page[data-hinge^="bottom"] .close,
+  .page[data-hinge^="top"] .close {
+    left: calc(var(--open-x) + (var(--fan-r) - var(--blade-w)) / 2);
+    top: calc(50% + var(--offset-y, 0vh) + var(--fan-r) + 3vh);
+  }
+
+  .copy {
+    --copy-scale: 0.78;
+    left: 50%;
+    max-width: 300px;
+    top: auto;
+    bottom: 8vh;
+    transform: translateX(-50%);
+  }
+
+  .page[data-copy="hidden"] .copy {
+    transform: translate(-50%, 4px) scale(0.94);
+  }
+}

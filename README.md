@@ -1,6 +1,6 @@
 # Interactive Fan Deck
 
-Fan color deck in code for a more playful web.
+Color fan deck in code for a more playful web.
 
 I rebuilt a color fan deck in code. Used to play with them a lot as a kid.
 Click it and it swings open into a half circle. The cards have paper grain,

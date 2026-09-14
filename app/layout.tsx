@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 
 export const metadata: Metadata = {
   title: "Interactive Fan Deck",
-  description: "Fan color deck in code for a more playful web.",
+  description: "Color fan deck in code for a more playful web.",
 };
 
 export const viewport: Viewport = { viewportFit: "cover" };

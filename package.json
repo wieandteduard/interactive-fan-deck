@@ -2,7 +2,7 @@
   "name": "interactive-fan-deck",
   "version": "0.1.0",
   "private": true,
-  "description": "Fan color deck in code for a more playful web.",
+  "description": "Color fan deck in code for a more playful web.",
   "license": "MIT",
   "author": "Eduard Wieandt",
   "repository": "github:wieandteduard/interactive-fan-deck",

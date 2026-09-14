@@ -534,7 +534,7 @@ export function FanDeck() {
           className={`${styles.lede} ${styles.enter}`}
           style={{ "--stagger": 2 } as React.CSSProperties}
         >
-          Fan color deck in code for
+          Color fan deck in code for
           <br />a more playful web.
         </p>
         <a

@@ -365,9 +365,13 @@
   --nudge: var(--peek);
 }
 
-/* Under the cursor it opens a touch further still. */
+/* Under the cursor it opens a little further — and on the hover's own
+   timing, not the swing's, so it answers the pointer. */
+.page[data-stage="shut"] .blade {
+  transition-duration: var(--hover, 370ms);
+}
 .page[data-stage="shut"] .deck:hover .blade {
-  --nudge: calc(var(--peek) * 1.35);
+  --nudge: calc(var(--peek) * 1.9);
 }
 
 .page[data-hinge^="bottom"] .deck {

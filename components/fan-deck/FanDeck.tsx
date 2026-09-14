@@ -522,17 +522,24 @@ export function FanDeck() {
       {DEV && <DialRoot position="top-right" theme="light" />}
 
       <section className={styles.copy} aria-hidden={!copyVisible}>
-        <h1 className={styles.title}>
+        <h1
+          className={`${styles.title} ${styles.enter}`}
+          style={{ "--stagger": 1 } as React.CSSProperties}
+        >
           Interactive
           <br />
           Fan Deck
         </h1>
-        <p className={styles.lede}>
+        <p
+          className={`${styles.lede} ${styles.enter}`}
+          style={{ "--stagger": 2 } as React.CSSProperties}
+        >
           Fan color deck in code for
           <br />a more playful web.
         </p>
         <a
-          className={styles.star}
+          className={`${styles.star} ${styles.enter}`}
+          style={{ "--stagger": 3 } as React.CSSProperties}
           href={REPO}
           target="_blank"
           rel="noreferrer"
@@ -549,7 +556,12 @@ export function FanDeck() {
           Star on GitHub
         </a>
         {stars !== null && stars >= STARS_WORTH_SHOWING && (
-          <p className={styles.stars}>{compact.format(stars)} stars</p>
+          <p
+            className={`${styles.stars} ${styles.enter}`}
+            style={{ "--stagger": 4 } as React.CSSProperties}
+          >
+            {compact.format(stars)} stars
+          </p>
         )}
       </section>
 
@@ -588,7 +600,10 @@ export function FanDeck() {
             }
           }}
         >
-        <div className={styles.pivot}>
+        <div
+          className={`${styles.pivot} ${styles.enter}`}
+          style={{ "--stagger": 0 } as React.CSSProperties}
+        >
           {blades.map((blade) => (
             <div
               key={blade.i}

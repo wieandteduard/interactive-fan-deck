@@ -67,66 +67,27 @@
 }
 
 /* ── Arrival ────────────────────────────────────────────
-   On first load everything resolves out of a blur, one thing after another:
-   the deck, then the headline, the line under it, the button. CSS animations
-   with a backwards fill, so nothing flashes before its turn and no JavaScript
-   has to run for the page to come in. */
-@keyframes arrive {
+   On first load everything enters one thing after another: opacity, a
+   little blur and a short rise, each element on its own with a hundred
+   milliseconds between them, indexed by --stagger. Backwards fill only, so
+   nothing shows before its turn and, once in, every element is back on its
+   own styles rather than pinned to the animation's last frame — the deck's
+   transform has a life of its own after this. */
+@keyframes enter {
   from {
-    filter: blur(14px);
-    opacity: 0;
-  }
-  to {
-    filter: blur(0);
-    opacity: 1;
-  }
-}
-
-@keyframes arrive-up {
-  from {
-    filter: blur(14px);
+    filter: blur(4px);
     opacity: 0;
     transform: translateY(10px);
   }
-  to {
-    filter: blur(0);
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
-.pivot,
-.title,
-.lede,
-.star,
-.stars {
-  animation: arrive 760ms var(--ease-out-quart, ease) both;
-}
-
-.title,
-.lede {
-  animation-name: arrive-up;
-}
-
-.title {
-  animation-delay: 180ms;
-}
-.lede {
-  animation-delay: 300ms;
-}
-.star {
-  animation-delay: 420ms;
-}
-.stars {
-  animation-delay: 540ms;
+.enter {
+  animation: enter 600ms var(--ease-out-quart, ease) backwards;
+  animation-delay: calc(var(--stagger, 0) * 100ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pivot,
-  .title,
-  .lede,
-  .star,
-  .stars {
+  .enter {
     animation: none;
   }
 }

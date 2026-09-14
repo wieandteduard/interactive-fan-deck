@@ -234,7 +234,7 @@ export function FanDeck() {
       options: Object.keys(EASINGS),
       default: "quint",
     },
-    float: [1.1, 0, 12, 0.1],
+    float: [2.2, 0, 12, 0.1],
     lift: [1.2, 0, 8, 0.1],
     hover: [370, 60, 1200, 10],
   });
@@ -250,7 +250,7 @@ export function FanDeck() {
   /* h1Gap is the distance from the headline down to the subcopy, buttonGap
      from the subcopy down to the button — each dial owns exactly one gap. */
   const copy = useDialKit("Copy", {
-    x: [53.5, 40, 70, 0.5],
+    x: [55.5, 40, 70, 0.5],
     /* dvh; moves the whole composition — deck and copy together. */
     y: [-4, -20, 20, 0.5],
     /* dvh; nudges the copy alone against the deck. */

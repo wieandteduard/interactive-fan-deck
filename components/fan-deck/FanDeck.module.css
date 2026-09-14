@@ -24,7 +24,7 @@
 }
 
 .page {
-  --pivot-x: 45%;
+  --pivot-x: 47%;
   /* Where the rivet goes once the deck is open and the copy has cleared. */
   --open-x: 50%;
   /* How far the whole fan is turned once it is out of the shut position. On
@@ -358,8 +358,10 @@
   transform: translateY(calc(var(--blade-w) * -0.08)) scale(var(--float, 1.032));
 }
 
-/* And the cards splay a few degrees, so you can tell it opens. */
-.page[data-stage="shut"] .deck:hover .blade {
+/* At rest the shut deck already sits a little splayed — you can tell it
+   opens — and the hover only grows it. The splay gathers as it slides into
+   position to open, and comes back once it is home. */
+.page[data-stage="shut"] .blade {
   --nudge: var(--peek);
 }
 

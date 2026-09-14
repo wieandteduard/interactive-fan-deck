@@ -104,8 +104,15 @@
   max-width: min(364px, calc(100vw - var(--copy-x) - 24px));
   position: absolute;
   transform-origin: 0 50%;
+  /* Kept on its own compositor layer, always. Otherwise the scale on the way
+     back re-rasterises the type at every step and, at the end, drops the
+     layer and snaps the text onto whatever half pixel translateY(-50%) left
+     it on — that was the shift. On a layer it is rasterised once and only
+     moved. */
+  backface-visibility: hidden;
+  will-change: transform;
   top: calc(50% + var(--offset-y, 0vh) + var(--copy-y, 0vh));
-  transform: translateY(-50%);
+  transform: translateY(-50%) translateZ(0);
   transition:
     opacity var(--align, 520ms) var(--ease-out-quad, ease),
     transform var(--align, 520ms) var(--ease-out-quad, ease);
@@ -117,7 +124,7 @@
 .page[data-copy="hidden"] .copy {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(calc(-50% + 4px)) scale(0.94);
+  transform: translateY(calc(-50% + 4px)) translateZ(0) scale(0.94);
 }
 
 .title {
@@ -579,7 +586,7 @@
     text-align: center;
     top: auto;
     bottom: 7vh;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateZ(0);
     transform-origin: 50% 50%;
   }
 
@@ -588,6 +595,6 @@
   }
 
   .page[data-copy="hidden"] .copy {
-    transform: translate(-50%, 4px) scale(0.94);
+    transform: translate(-50%, 4px) translateZ(0) scale(0.94);
   }
 }

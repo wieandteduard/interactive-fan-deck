@@ -2,14 +2,14 @@
 
    Paper is filtered noise with a fast envelope, so it is cheaper and truer to
    synthesise than to ship. Each card peeling off the one under it is one
-   stick-slip event — a burst of bandpassed noise a few tens of milliseconds
-   long. The open is twelve of those laid across the sweep, front-loaded where
-   ease-out-quint puts the velocity, and running down in brightness and level
-   as the fan slows: the outermost card carries the least load and travels
-   fastest, so it goes first and brightest; the card buried under ten others
-   goes last, low and soft. That descent is what keeps twelve ticks from being
-   a machine gun — they are twelve stages of one thing running down, not twelve
-   copies of one thing.
+   crackle — a handful of broadband noise grains a few milliseconds apart,
+   sharp on and quick off. The open is twelve of those laid across the sweep,
+   front-loaded where ease-out-quint puts the velocity, and running down in
+   brightness and level as the fan slows: the outermost card carries the least
+   load and travels fastest, so it goes first and brightest; the card buried
+   under ten others goes last, dull and soft. Brightness is a lowpass closing,
+   never a pitch falling — there is no bandpass anywhere, because a centre
+   frequency is a note, and twelve notes in a row are a glockenspiel.
 
    Everything is scheduled on the audio clock against a BaseAudioContext, so
    the same code renders into an OfflineAudioContext for measurement. Nothing
@@ -62,66 +62,55 @@ const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 
 interface Event {
   at: number; // seconds, absolute on the context clock
-  fc: number; // bandpass centre
-  q: number;
+  /* Brightness: a lowpass cutoff. No bandpass anywhere — a bandpass gives a
+     burst of noise a centre, and a centre is a pitch, and twelve pitches in a
+     row are a glockenspiel. Paper has no centre. */
+  cut: number;
+  /* Floor: a highpass, so no body creeps in underneath. */
+  floor: number;
   peak: number; // linear, before the master
+  attack: number; // seconds
   decay: number; // seconds
   pan: number;
-  /* The hover slide gets an extra lowpass: at 3 mm/s nothing generates top
-     end, and any 5 kHz content reads as a click rather than a slide. */
-  slide?: boolean;
+  rate: number; // playbackRate; tilts the noise a little per grain
 }
 
-/* Paper has no click in it. A card slipping is a brush, not a tap: the burst
-   swells over several milliseconds and dies over tens of them, wide-band and
-   diffuse — so each card is a small cluster of grains, not one strike. */
-const ATTACK = 0.007;
-
-/* The per-voice peaks below were set by ear-of-mind and came out ~18 dB shy
-   when rendered — a bandpass at Q 1.1 passes only a sliver of the buffer's
-   energy. Measured with the master at 0.5: the open riffle now peaks around
-   -31 dBFS, the hover around -42. Quiet enough to sit under the motion, loud
-   enough to exist. (Wider bands pass more energy than the narrow ones this
-   was first set against, hence lower than it was.) */
+/* The per-voice peaks are set against a measured render, not arithmetic:
+   with the master at 0.5 the open riffle peaks around -31 dBFS, the hover
+   around -40. Quiet enough to sit under the motion, loud enough to exist. */
 const LEVEL = 5.5;
 
-/* One event. The gain is constructed at zero and every move on it is a ramp,
+/* One grain. The gain is constructed at zero and every move on it is a ramp,
    so there is no instant at which it can step — which on a sound this quiet
    is the only thing that would be audible. */
 function fire(ctx: BaseAudioContext, bus: AudioNode, e: Event, live: Voice[]) {
-  const src = new AudioBufferSourceNode(ctx, { buffer: noise(ctx) });
-  const band = new BiquadFilterNode(ctx, {
-    type: "bandpass",
-    frequency: e.fc,
-    Q: e.q,
+  const src = new AudioBufferSourceNode(ctx, {
+    buffer: noise(ctx),
+    playbackRate: e.rate,
   });
-  /* Nothing below the low-mids at all: body down there is what makes a burst
-     read as wood knocking rather than card slipping. It also keeps the object
-     small and near, which is what paper is. */
   const high = new BiquadFilterNode(ctx, {
     type: "highpass",
-    frequency: e.slide ? 900 : 1300,
-    Q: 0.707,
+    frequency: e.floor,
+    Q: 0.5,
   });
-  /* A rolled top: paper has no glass in it. */
   const low = new BiquadFilterNode(ctx, {
     type: "lowpass",
-    frequency: e.slide ? 4200 : 6500,
-    Q: 0.707,
+    frequency: e.cut,
+    Q: 0.5,
   });
   const gain = new GainNode(ctx, { gain: 0 });
   const pan = new StereoPannerNode(ctx, { pan: e.pan });
-  const end = e.at + ATTACK + e.decay;
+  const end = e.at + e.attack + e.decay;
 
   gain.gain.setValueAtTime(0, e.at);
-  gain.gain.linearRampToValueAtTime(e.peak, e.at + ATTACK);
+  gain.gain.linearRampToValueAtTime(e.peak, e.at + e.attack);
   gain.gain.exponentialRampToValueAtTime(e.peak * 0.0032, end);
   gain.gain.linearRampToValueAtTime(0, end + 0.003);
 
-  src.connect(band).connect(high).connect(low).connect(gain).connect(pan).connect(bus);
+  src.connect(high).connect(low).connect(gain).connect(pan).connect(bus);
 
-  /* Every voice reads the shared buffer from a different place, which alone
-     stops twelve of them sounding like one sample fired twelve times. */
+  /* Every grain reads the shared buffer from a different place, which alone
+     stops many of them sounding like one sample fired many times. */
   src.start(e.at, rand(0, 1.7), 0.12);
   src.stop(end + 0.006);
 
@@ -129,7 +118,6 @@ function fire(ctx: BaseAudioContext, bus: AudioNode, e: Event, live: Voice[]) {
   live.push(voice);
   src.onended = () => {
     src.disconnect();
-    band.disconnect();
     high.disconnect();
     low.disconnect();
     gain.disconnect();
@@ -156,19 +144,19 @@ export function schedule(
     /* The shut stack swinging flat. Nothing shears — it is one rigid block —
        but a block that size moving that fast whisks air and pivots on the
        rivet, and without it the open feels late: the riffle can't start
-       until the sweep does, 720 ms after the click. One dark, breathy swish,
-       front-loaded like the quint that drives it, well under the riffle. */
+       until the sweep does. One dark breath, well under the riffle. */
     fire(
       ctx,
       bus,
       {
         at: t0,
-        fc: rand(1400, 1800),
-        q: 0.35,
-        peak: 0.0055 * LEVEL,
+        cut: rand(2200, 2800),
+        floor: 500,
+        peak: 0.0075 * LEVEL,
+        attack: 0.02,
         decay: rand(0.18, 0.24),
         pan: -0.12,
-        slide: true,
+        rate: rand(0.85, 0.95),
       },
       live
     );
@@ -176,23 +164,25 @@ export function schedule(
   }
 
   if (gesture === "hover") {
-    /* One card face dragging a millimetre across two neighbours. No impact,
-       just static friction letting go: darker, slower and quieter than
-       anything in the riffle. */
-    fire(
-      ctx,
-      bus,
-      {
-        at: t0,
-        fc: rand(1800, 2200),
-        q: 0.4,
-        peak: 0.0075 * LEVEL * 1.25,
-        decay: rand(0.05, 0.07),
-        pan: rand(-0.1, 0.1),
-        slide: true,
-      },
-      live
-    );
+    /* One card face dragging a millimetre across two neighbours: a short
+       soft slide, darker and quieter than anything in the riffle. */
+    for (let g = 0; g < 3; g++) {
+      fire(
+        ctx,
+        bus,
+        {
+          at: t0 + g * rand(0.004, 0.012),
+          cut: rand(2600, 3400),
+          floor: 700,
+          peak: 0.011 * LEVEL * (g === 0 ? 1 : rand(0.3, 0.6)),
+          attack: 0.004,
+          decay: rand(0.03, 0.05),
+          pan: rand(-0.1, 0.1),
+          rate: rand(0.85, 1.15),
+        },
+        live
+      );
+    }
     return;
   }
 
@@ -200,36 +190,54 @@ export function schedule(
   const opening = gesture === "open";
   const sweep = (p.sweep / 1000) * (opening ? 1 : 0.78);
 
-  /* Ease-out-quint is 97% done by half its window, so the events finish around
-     0.62 of the sweep — the last few percent of travel are invisible and would
-     be inaudible. Brightness and level both run down with the velocity. */
-  /* Brightness runs 3.6 kHz down to 2 — a paper "shh" sits there; higher
-     was glass, lower was wood. Level runs five to one. Each card is a cluster
-     of two or three grains a few milliseconds apart with their own levels, so
-     the run is a rustle rather than a row of taps. */
-  const rf = Math.pow(1.8, -1 / (n - 1));
+  /* Ease-out-quint is 97% done by half its window, so the events finish
+     around 0.62 of the sweep. Each card is a crackle — four or five grains a
+     few milliseconds apart at their own levels and tilts, sharp on, quick
+     off — so the run is a rustle rather than a row of taps. Brightness and
+     level run down with the velocity: the lowpass closes from 7 kHz toward
+     3, the level drops five to one. Nothing descends in pitch, because
+     nothing has one. */
   const rg = Math.pow(5, -1 / (n - 1));
   for (let k = 1; k <= n; k++) {
     const seat = k === n;
     const at = t0 + 0.62 * sweep * Math.pow(k / n, 1.55) + rand(-0.004, 0.004);
-    /* Gathering in, the cards arrive rather than peel: the same run, a shade
-       darker and softer. */
-    const dark = opening ? 1 : 0.9;
-    const grains = seat ? 1 : 2 + Math.round(Math.random());
+    const f = (k - 1) / (n - 1);
+    const cut = (7000 - 4000 * f) * (opening ? 1 : 0.85);
+    if (seat) {
+      /* The fan arriving at its resting geometry: one soft, longer shh. */
+      fire(
+        ctx,
+        bus,
+        {
+          at,
+          cut: 2400,
+          floor: 500,
+          peak: 0.012 * LEVEL,
+          attack: 0.012,
+          decay: 0.11,
+          pan: -0.18,
+          rate: 0.9,
+        },
+        live
+      );
+      continue;
+    }
+    const grains = 4 + Math.round(Math.random());
     for (let g = 0; g < grains; g++) {
       fire(
         ctx,
         bus,
         {
-          at: at + g * rand(0.006, 0.016),
-          fc: (seat ? 1800 : 3600 * Math.pow(rf, k - 1)) * dark * rand(0.9, 1.1),
-          /* Wide. A narrow band rings, and a ring is a pitch; paper has none. */
-          q: seat ? 0.35 : 0.4,
+          at: at + g * rand(0.003, 0.011),
+          cut: cut * rand(0.85, 1.15),
+          floor: 800,
           peak:
-            0.03 * LEVEL * Math.pow(rg, k - 1) * (opening ? 1 : 0.8) *
-            (g === 0 ? 1 : rand(0.35, 0.7)),
-          decay: seat ? 0.09 : rand(0.038, 0.06) + 0.0012 * (k - 1),
-          pan: 0.26 - (0.44 * (k - 1)) / (n - 1) + rand(-0.04, 0.04),
+            0.026 * LEVEL * Math.pow(rg, k - 1) * (opening ? 1 : 0.8) *
+            (g === 0 ? 1 : rand(0.25, 0.6)),
+          attack: rand(0.002, 0.004),
+          decay: rand(0.016, 0.03) + 0.001 * (k - 1),
+          pan: 0.26 - (0.44 * (k - 1)) / (n - 1) + rand(-0.05, 0.05),
+          rate: rand(0.8, 1.2),
         },
         live
       );
@@ -237,22 +245,23 @@ export function schedule(
   }
 
   if (!opening) {
-    /* The stack coming to rest at the end of the close turn. Not a tap — a
-       tap is wood — but the cards settling against each other: a soft, bright
-       breath. Quint has done most of the travel early, so it sits a third of
-       the way into that beat, not at its end. */
+    /* The stack coming to rest at the end of the close turn: the cards
+       settling against each other — a soft, longer breath, not a tap. Quint
+       has done most of the travel early, so it sits a third of the way into
+       that beat, not at its end. */
     const turn = (p.turn / 1000) * 0.78;
     fire(
       ctx,
       bus,
       {
         at: t0 + sweep + turn * 0.3,
-        fc: rand(1600, 2100),
-        q: 0.35,
-        peak: 0.016 * LEVEL,
-        decay: rand(0.09, 0.12),
+        cut: rand(2000, 2600),
+        floor: 450,
+        peak: 0.012 * LEVEL,
+        attack: 0.015,
+        decay: rand(0.1, 0.14),
         pan: 0,
-        slide: true,
+        rate: 0.88,
       },
       live
     );

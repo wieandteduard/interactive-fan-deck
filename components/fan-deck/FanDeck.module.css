@@ -358,20 +358,22 @@
   transform: translateY(calc(var(--blade-w) * -0.08)) scale(var(--float, 1.032));
 }
 
-/* At rest the shut deck already sits a little splayed — you can tell it
-   opens — and the hover only grows it. The splay gathers as it slides into
-   position to open, and comes back once it is home. */
+/* At rest the shut deck sits a little splayed — you can tell it opens. It
+   arrives shut tight, though, and eases into that splay once its entrance has
+   resolved; the same slow ease settles it back after a hover. The splay
+   gathers as it slides into position to open, and returns once it is home. */
 .page[data-stage="shut"] .blade {
+  transition-duration: 800ms;
+}
+.page[data-ready="true"][data-stage="shut"] .blade {
   --nudge: var(--peek);
 }
 
-/* Under the cursor it opens a little further — and on the hover's own
-   timing, not the swing's, so it answers the pointer. */
-.page[data-stage="shut"] .blade {
-  transition-duration: var(--hover, 370ms);
-}
+/* Under the cursor it opens a little further, quickly — on the hover's own
+   timing, so it answers the pointer; the settle back is the slow one. */
 .page[data-stage="shut"] .deck:hover .blade {
   --nudge: calc(var(--peek) * 1.9);
+  transition-duration: var(--hover, 370ms);
 }
 
 .page[data-hinge^="bottom"] .deck {

@@ -275,6 +275,15 @@ export function FanDeck() {
   const [stage, setStage] = useState<Stage>("shut");
   const [stars, setStars] = useState<number | null>(null);
 
+  /* The deck arrives shut tight and only then eases into its resting splay,
+     once its own entrance has resolved. */
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const id = setTimeout(() => setReady(true), reduce ? 0 : 700);
+    return () => clearTimeout(id);
+  }, []);
+
   /* The hue, turning. Starts on a dark blue and heads through violet toward
      red. Ten steps a second is plenty: the background-color transition on the
      cards smooths the rest. */
@@ -491,6 +500,7 @@ export function FanDeck() {
       data-hinge={hinge}
       data-open={open ? "true" : "false"}
       data-stage={stage}
+      data-ready={ready ? "true" : "false"}
       data-copy={copyVisible ? "shown" : "hidden"}
       style={
         {

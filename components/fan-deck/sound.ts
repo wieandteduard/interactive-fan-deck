@@ -63,8 +63,8 @@ const GRAINS: Record<Voicing, Grain> = {
     cut: [2600, 1600],
     floor: 300,
     tail: [1, 1],
-    level: 0.4,
-    body: 0.35,
+    level: 0.3,
+    body: 0.3,
   },
   /* Three or four short grains: a dry crackle. */
   crackle: {

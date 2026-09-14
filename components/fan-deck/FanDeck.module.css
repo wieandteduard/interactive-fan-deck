@@ -570,10 +570,18 @@
      half circle opens to the right with its long axis down the screen, where
      the room is — and turns back upright on the way home. */
   .page {
-    --pivot-x: 50%;
-    --open-x: 21vw;
+    --open-x: 18vw;
     --turn-open: 90deg;
-    --fan-r: min(62vw, 40vh);
+    --fan-r: min(76vw, 44vh);
+  }
+
+  /* The rivet is in a corner, so centring the rivet puts the card off
+     centre by half its width; centre the card instead. */
+  .page[data-hinge$="left"] {
+    --pivot-x: calc(50% - var(--blade-w) / 2 + var(--inset));
+  }
+  .page[data-hinge$="right"] {
+    --pivot-x: calc(50% + var(--blade-w) / 2 - var(--inset));
   }
 
   /* Shut and upright, the deck is centred on its own length; once turned,
@@ -595,13 +603,22 @@
     top: calc(50% + var(--offset-y, 0vh) + var(--fan-r) + 3vh);
   }
 
+  /* Everything on one axis: the copy centred under the deck, the block
+     receding about its own middle. */
   .copy {
     --copy-scale: 0.78;
+    align-items: center;
     left: 50%;
-    max-width: 300px;
+    max-width: 320px;
+    text-align: center;
     top: auto;
-    bottom: 8vh;
+    bottom: 7vh;
     transform: translateX(-50%);
+    transform-origin: 50% 50%;
+  }
+
+  .star {
+    align-self: center;
   }
 
   .page[data-copy="hidden"] .copy {

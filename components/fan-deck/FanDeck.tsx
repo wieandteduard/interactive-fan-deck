@@ -632,7 +632,16 @@ export function FanDeck() {
                 <span className={styles.rim} />
               </div>
               {/* Off the tip, but inside the rotated blade so it turns with it. */}
-              <span className={styles.code}>{blade.hex}</span>
+              <span className={styles.code} aria-label={blade.hex}>
+                {/* One fixed cell per glyph: the hue drifts, the digits change,
+                    and the code never moves. Tabular figures only cover the
+                    numerals; A to F need the same treatment. */}
+                {blade.hex.split("").map((glyph, at) => (
+                  <span key={at} className={styles.glyph} aria-hidden="true">
+                    {glyph}
+                  </span>
+                ))}
+              </span>
             </div>
           ))}
 

@@ -213,25 +213,12 @@ export function schedule(
   live: Voice[]
 ) {
   if (gesture === "turn") {
-    /* The shut stack swinging flat. Nothing shears — it is one rigid block —
-       but a block that size moving that fast whisks air and pivots on the
-       rivet, and without it the open feels late: the riffle can't start
-       until the sweep does. One dark breath, well under the riffle. */
-    fire(
-      ctx,
-      bus,
-      {
-        at: t0,
-        cut: rand(2200, 2800),
-        floor: 500,
-        peak: 0.0075 * LEVEL,
-        attack: 0.02,
-        decay: rand(0.18, 0.24),
-        pan: -0.12,
-        rate: rand(0.85, 0.95),
-      },
-      live
-    );
+    /* The shut stack swinging flat makes no sound of its own — it is one
+       rigid block, nothing shears. What you hear is it locking into
+       position at the end: one dull, muffled tick, nearly nothing. Quint
+       has done 97% of the travel by half the window, so that is when it
+       lands. */
+    lock(ctx, bus, t0 + (p.turn / 1000) * 0.5, live);
     return;
   }
 
@@ -322,27 +309,29 @@ export function schedule(
   }
 
   if (!opening) {
-    /* The stack coming to rest at the end of the close turn: the cards
-       settling against each other — a soft, longer breath, not a tap. Quint
-       has done most of the travel early, so it sits a third of the way into
-       that beat, not at its end. */
-    const turn = (p.turn / 1000) * 0.78;
-    fire(
-      ctx,
-      bus,
-      {
-        at: t0 + sweep + turn * 0.3,
-        cut: rand(2000, 2600),
-        floor: 450,
-        peak: 0.012 * LEVEL,
-        attack: 0.015,
-        decay: rand(0.1, 0.14),
-        pan: 0,
-        rate: 0.88,
-      },
-      live
-    );
+    /* And the same lock when the stack comes upright again at the end of
+       the close turn. */
+    lock(ctx, bus, t0 + sweep + (p.turn / 1000) * 0.78 * 0.5, live);
   }
+}
+
+/* The deck locking into position: very low, very short, almost numb. */
+function lock(ctx: BaseAudioContext, bus: AudioNode, at: number, live: Voice[]) {
+  fire(
+    ctx,
+    bus,
+    {
+      at,
+      cut: rand(900, 1300),
+      floor: 180,
+      peak: 0.0035 * LEVEL,
+      attack: 0.003,
+      decay: rand(0.035, 0.05),
+      pan: 0,
+      rate: rand(0.7, 0.8),
+    },
+    live
+  );
 }
 
 /* Interrupting a gesture mid-flight. Voices that haven't started yet are

@@ -66,6 +66,71 @@
   --hole-y: var(--inset);
 }
 
+/* ── Arrival ────────────────────────────────────────────
+   On first load everything resolves out of a blur, one thing after another:
+   the deck, then the headline, the line under it, the button. CSS animations
+   with a backwards fill, so nothing flashes before its turn and no JavaScript
+   has to run for the page to come in. */
+@keyframes arrive {
+  from {
+    filter: blur(14px);
+    opacity: 0;
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+@keyframes arrive-up {
+  from {
+    filter: blur(14px);
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pivot,
+.title,
+.lede,
+.star,
+.stars {
+  animation: arrive 760ms var(--ease-out-quart, ease) both;
+}
+
+.title,
+.lede {
+  animation-name: arrive-up;
+}
+
+.title {
+  animation-delay: 180ms;
+}
+.lede {
+  animation-delay: 300ms;
+}
+.star {
+  animation-delay: 420ms;
+}
+.stars {
+  animation-delay: 540ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pivot,
+  .title,
+  .lede,
+  .star,
+  .stars {
+    animation: none;
+  }
+}
+
 /* ── Copy ───────────────────────────────────────────────
    Sits to the right of the shut deck, under it in the stack, and gets out of
    the way once the blades sweep across it. Measurements are the Figma frame's,

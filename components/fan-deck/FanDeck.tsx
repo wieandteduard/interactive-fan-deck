@@ -596,6 +596,9 @@ export function FanDeck() {
               style={
                 {
                   "--angle": `${blade.angle}deg`,
+                  /* The hover hint: shut, the cards splay a few degrees either
+                     way under the cursor, like a hand of cards. */
+                  "--peek": `${((blade.i - (count - 1) / 2) * 1.0).toFixed(2)}deg`,
                   "--colour": blade.colour,
                   "--texture": blade.texture,
                   "--grain": blade.grain,

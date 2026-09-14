@@ -75,7 +75,7 @@
   display: flex;
   flex-direction: column;
   left: var(--copy-x);
-  max-width: 364px;
+  max-width: min(364px, calc(100vw - var(--copy-x) - 24px));
   position: absolute;
   transform-origin: 0 50%;
   top: calc(50% + var(--offset-y, 0vh) + var(--copy-y, 0vh));
@@ -325,6 +325,11 @@
   transform: translateY(calc(var(--blade-w) * -0.08)) scale(var(--float, 1.032));
 }
 
+/* And the cards splay a few degrees, so you can tell it opens. */
+.page[data-stage="shut"] .deck:hover .blade {
+  --nudge: var(--peek);
+}
+
 .page[data-hinge^="bottom"] .deck {
   top: calc(50% + var(--offset-y, 0vh) + (var(--fan-r) - var(--blade-w)) / 2);
 }
@@ -357,7 +362,7 @@
   left: calc(-1 * var(--hole-x));
   position: absolute;
   top: calc(-1 * var(--hole-y));
-  transform: rotate(var(--angle));
+  transform: rotate(calc(var(--angle) + var(--nudge, 0deg)));
   transform-origin: var(--hole-x) var(--hole-y);
   transition: transform var(--swing, 1000ms) var(--ease, ease);
   width: var(--blade-w);
@@ -494,7 +499,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   /* On a phone the deck stands upright in the middle, as on desktop, and
      bigger. Opening, it turns a quarter clockwise as it slides left — so the
      half circle opens to the right with its long axis down the screen, where

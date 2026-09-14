@@ -240,7 +240,7 @@ export function FanDeck() {
   });
   const sound = useDialKit("Sound", {
     on: true,
-    volume: [0.14, 0, 1, 0.02],
+    volume: [0.1, 0, 1, 0.02],
     voice: { type: "select", options: [...VOICINGS], default: "tap" },
     /* multiplier on brightness (the lowpass ceilings) */
     bright: [1, 0.4, 2, 0.05],

@@ -18,13 +18,85 @@
 
 export type Gesture = "turn" | "open" | "close" | "hover";
 
+/* Four readings of what a card sliding off a card sounds like. They differ
+   in how many grains make one card, how long each lasts and how sharp it
+   starts — the three things that decide whether noise reads as paper, static,
+   or a snap. Pick by ear. */
+export const VOICINGS = ["crackle", "brush", "flick", "rustle"] as const;
+export type Voicing = (typeof VOICINGS)[number];
+
 export interface SoundParams {
   /* Ms. Open is turn then sweep; close is sweep then turn. */
   turn: number;
   sweep: number;
   /* Cards in the deck — one event per card. */
   blades: number;
+  voice: Voicing;
+  /* Multipliers on every lowpass ceiling and every grain length. */
+  bright: number;
+  length: number;
 }
+
+interface Grain {
+  count: number; // grains per card
+  spacing: [number, number]; // seconds between grains
+  attack: [number, number];
+  decay: [number, number];
+  cut: [number, number]; // lowpass ceiling at the first card, last card
+  floor: number;
+  tail: [number, number]; // level of the grains after the first
+  /* Trim so every voicing lands at the same peak with the master at half. */
+  level: number;
+}
+
+const GRAINS: Record<Voicing, Grain> = {
+  /* Four or five short broadband grains: a dry crackle. */
+  crackle: {
+    count: 4.5,
+    spacing: [0.003, 0.011],
+    attack: [0.002, 0.004],
+    decay: [0.016, 0.03],
+    cut: [7000, 3000],
+    floor: 800,
+    tail: [0.25, 0.6],
+    level: 1,
+  },
+  /* One or two long soft grains: a card sliding, shh. */
+  brush: {
+    count: 1.5,
+    spacing: [0.02, 0.04],
+    attack: [0.01, 0.016],
+    decay: [0.07, 0.12],
+    cut: [4200, 2200],
+    floor: 450,
+    tail: [0.4, 0.7],
+    level: 0.5,
+  },
+  /* One very short bright grain: a card snapping past a thumb. Riffling a
+     deck of cards is a run of these. */
+  flick: {
+    count: 1,
+    spacing: [0, 0],
+    attack: [0.0012, 0.002],
+    decay: [0.007, 0.012],
+    cut: [9000, 4500],
+    floor: 1200,
+    tail: [1, 1],
+    level: 0.5,
+  },
+  /* Eight to ten tiny grains scattered over sixty milliseconds: a dense,
+     stochastic rustle. */
+  rustle: {
+    count: 9,
+    spacing: [0.002, 0.009],
+    attack: [0.001, 0.003],
+    decay: [0.005, 0.011],
+    cut: [5500, 2800],
+    floor: 700,
+    tail: [0.3, 0.9],
+    level: 1.8,
+  },
+};
 
 export interface Voice {
   src: AudioBufferSourceNode;
@@ -189,20 +261,20 @@ export function schedule(
   const n = Math.max(3, Math.round(p.blades));
   const opening = gesture === "open";
   const sweep = (p.sweep / 1000) * (opening ? 1 : 0.78);
+  const G = GRAINS[p.voice] ?? GRAINS.crackle;
+  const bright = p.bright || 1;
+  const length = p.length || 1;
 
   /* Ease-out-quint is 97% done by half its window, so the events finish
-     around 0.62 of the sweep. Each card is a crackle — four or five grains a
-     few milliseconds apart at their own levels and tilts, sharp on, quick
-     off — so the run is a rustle rather than a row of taps. Brightness and
-     level run down with the velocity: the lowpass closes from 7 kHz toward
-     3, the level drops five to one. Nothing descends in pitch, because
-     nothing has one. */
+     around 0.62 of the sweep. Brightness and level run down with the
+     velocity: the lowpass closes, the level drops five to one. Nothing
+     descends in pitch, because nothing has one. */
   const rg = Math.pow(5, -1 / (n - 1));
   for (let k = 1; k <= n; k++) {
     const seat = k === n;
     const at = t0 + 0.62 * sweep * Math.pow(k / n, 1.55) + rand(-0.004, 0.004);
     const f = (k - 1) / (n - 1);
-    const cut = (7000 - 4000 * f) * (opening ? 1 : 0.85);
+    const cut = (G.cut[0] + (G.cut[1] - G.cut[0]) * f) * bright * (opening ? 1 : 0.85);
     if (seat) {
       /* The fan arriving at its resting geometry: one soft, longer shh. */
       fire(
@@ -222,20 +294,25 @@ export function schedule(
       );
       continue;
     }
-    const grains = 4 + Math.round(Math.random());
+    const grains = Math.max(1, Math.round(G.count + rand(-0.5, 0.5)));
+    let offset = 0;
     for (let g = 0; g < grains; g++) {
+      if (g > 0) offset += rand(G.spacing[0], G.spacing[1]);
       fire(
         ctx,
         bus,
         {
-          at: at + g * rand(0.003, 0.011),
+          at: at + offset,
           cut: cut * rand(0.85, 1.15),
-          floor: 800,
+          floor: G.floor,
+          /* Fewer grains per card need to carry more level each to land at
+             the same peak; the square root keeps the sum roughly even. */
           peak:
-            0.026 * LEVEL * Math.pow(rg, k - 1) * (opening ? 1 : 0.8) *
-            (g === 0 ? 1 : rand(0.25, 0.6)),
-          attack: rand(0.002, 0.004),
-          decay: rand(0.016, 0.03) + 0.001 * (k - 1),
+            (0.026 * LEVEL * G.level * Math.pow(rg, k - 1) * (opening ? 1 : 0.8) *
+              (g === 0 ? 1 : rand(G.tail[0], G.tail[1]))) /
+            Math.sqrt(Math.max(1, G.count) / 4.5),
+          attack: rand(G.attack[0], G.attack[1]) * length,
+          decay: (rand(G.decay[0], G.decay[1]) + 0.001 * (k - 1)) * length,
           pan: 0.26 - (0.44 * (k - 1)) / (n - 1) + rand(-0.05, 0.05),
           rate: rand(0.8, 1.2),
         },

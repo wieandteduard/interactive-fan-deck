@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DialRoot, useDialKit } from "dialkit";
 import "dialkit/styles.css";
 import styles from "./FanDeck.module.css";
-import { hush, schedule } from "./sound";
-import type { Gesture, Voice } from "./sound";
+import { VOICINGS, hush, schedule } from "./sound";
+import type { Gesture, Voice, Voicing } from "./sound";
 
 /* Where the source lives. The page is the live demo; the deck itself is the
    open-source part. */
@@ -240,7 +240,12 @@ export function FanDeck() {
   });
   const sound = useDialKit("Sound", {
     on: true,
-    volume: [0.5, 0, 1, 0.05],
+    volume: [0.35, 0, 1, 0.05],
+    voice: { type: "select", options: [...VOICINGS], default: "crackle" },
+    /* multiplier on brightness (the lowpass ceilings) */
+    bright: [1, 0.4, 2, 0.05],
+    /* multiplier on grain length (attack and decay) */
+    length: [1, 0.3, 4, 0.05],
   });
   /* h1Gap is the distance from the headline down to the subcopy, buttonGap
      from the subcopy down to the button — each dial owns exactly one gap. */
@@ -320,7 +325,14 @@ export function FanDeck() {
       out.bus,
       gesture,
       out.ctx.currentTime + 0.015,
-      { turn: TURN, sweep: SPREAD, blades: count },
+      {
+        turn: TURN,
+        sweep: SPREAD,
+        blades: count,
+        voice: sound.voice as Voicing,
+        bright: sound.bright,
+        length: sound.length,
+      },
       live.current
     );
   }

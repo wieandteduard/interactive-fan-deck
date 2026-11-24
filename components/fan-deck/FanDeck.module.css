@@ -411,6 +411,8 @@
   transform: rotate(calc(var(--angle) + var(--nudge, 0deg)));
   transform-origin: var(--hole-x) var(--hole-y);
   transition: transform var(--swing, 1000ms) var(--ease, ease);
+  /* A finger dragged across the fan is the gesture, not a scroll. */
+  touch-action: none;
   width: var(--blade-w);
   will-change: transform;
 }
@@ -443,8 +445,10 @@
 }
 
 /* Open, each blade answers the cursor on its own: a hair further out of the
-   deck, along its own length. Just enough to feel the thing under your hand. */
-.page[data-open="true"] .blade:hover .body {
+   deck, along its own length. Just enough to feel the thing under your hand.
+   On a phone there is no hover — data-hot is the card under the finger. */
+.page[data-open="true"] .blade:hover .body,
+.page[data-open="true"] .blade[data-hot] .body {
   transform: translateY(var(--lift, -1.4%));
 }
 
@@ -483,11 +487,47 @@
 }
 
 /* No hover, no hover labels. On touch a tapped card keeps a sticky :hover,
-   and on a phone the turned fan carries half its codes past 90°, upside down. */
+   and on a phone the turned fan carries half its codes past 90°, upside down.
+   The sticky lift is dropped so only the card under the finger rises. */
 @media (hover: none) {
+  .blade {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
   .code {
     display: none;
   }
+  .page[data-open="true"] .blade:hover .body {
+    transform: none;
+  }
+  .page[data-open="true"] .blade[data-hot] .body {
+    transform: translateY(var(--lift, -1.4%));
+  }
+}
+
+/* Safari ticks when a pressed pointer flips a native switch — a finger on
+   iPhone, the trackpad on a Mac. One sits on each card, invisible. It has to
+   stay a real switch — appearance, and not display:none — or WebKit never
+   plays it. */
+.switch {
+  appearance: auto;
+  -webkit-appearance: auto;
+  border: 0;
+  cursor: inherit;
+  height: 100%;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+  z-index: 2;
+}
+
+.switch:focus {
+  outline: none;
 }
 
 /* The paper itself: the sheet scan from Figma, held far larger than the blade

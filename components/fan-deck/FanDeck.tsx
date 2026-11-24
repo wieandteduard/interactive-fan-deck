@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { DialRoot, useDialKit } from "dialkit";
 import "dialkit/styles.css";
 import styles from "./FanDeck.module.css";
+import { cardAt, createHaptics, isContact, subscribeSwitch, wantsSwitch } from "./haptic";
 import { VOICINGS, hush, schedule } from "./sound";
 import type { Gesture, Voice, Voicing } from "./sound";
 
@@ -211,6 +212,12 @@ type Stage = "shut" | "align" | "flat" | "open";
    whatever the motion panel is set to. */
 const CLOSE = 0.78;
 
+/* The switch attribute is what makes WebKit play a haptic. React has no
+   prop for it; setting it on the node keeps the markup a real switch. */
+function armSwitch(node: HTMLInputElement | null) {
+  node?.setAttribute("switch", "");
+}
+
 export function FanDeck() {
   const dials = useDialKit("Fan deck", {
     blades: [12, 3, 24, 1],
@@ -274,6 +281,11 @@ export function FanDeck() {
 
   const [stage, setStage] = useState<Stage>("shut");
   const [stars, setStars] = useState<number | null>(null);
+  /* A real switch on each card: the iPhone haptic, and on a Mac the
+     trackpad tick. False on the server so the markup matches. */
+  const switchTick = useSyncExternalStore(subscribeSwitch, wantsSwitch, () => false);
+  const onFinger = useRef<(event: PointerEvent) => void>(() => {});
+  const [feel] = useState(() => createHaptics(onFinger));
 
   /* The deck arrives shut tight and only then eases into its resting splay,
      once its own entrance has resolved. */
@@ -302,6 +314,29 @@ export function FanDeck() {
   const [swing, setSwing] = useState(TURN);
   const beat = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = stage === "open";
+
+  function fingerMeets(x: number, y: number) {
+    const hit = cardAt(x, y);
+    const next = hit?.id ?? null;
+    if (next === feel.card) return;
+    feel.focus(hit);
+    if (next == null) return;
+    /* Shut, the stack splays under the cursor and each edge is a card.
+       Open, the same crossing is the slide across the fan. */
+    if (open || stage === "shut") play("hover");
+    feel.meet("touch");
+  }
+  useLayoutEffect(() => {
+    onFinger.current = (event) => fingerMeets(event.clientX, event.clientY);
+  });
+  useEffect(() => {
+    const move = (event: PointerEvent) => {
+      if (isContact(event.pointerType) || event.buttons > 0) return;
+      onFinger.current(event);
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    return () => window.removeEventListener("pointermove", move);
+  }, []);
 
   /* ── Sound ─────────────────────────────────────────────
      The context is created on the first gesture that can legitimately make
@@ -359,6 +394,8 @@ export function FanDeck() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => () => feel.stop(), [feel]);
 
   useEffect(() => {
     /* Development only: lets the same scheduler be rendered into an
@@ -597,12 +634,35 @@ export function FanDeck() {
           tabIndex={0}
           aria-pressed={open}
           aria-label={open ? "Close the fan deck" : "Open the fan deck"}
-          onClick={toggle}
+          onClick={() => {
+            /* Sliding a finger across the open fan is how you feel the cards.
+               It should not also close them. */
+            if (feel.consumeClick(open) === "drag") return;
+            toggle();
+          }}
           /* pointerdown is already a user gesture, so the context can be built
              here — a few dozen milliseconds before the click lands — instead
              of inside the click, where its creation would delay the first
-             sound. */
-          onPointerDown={() => void speaker()}
+             sound. A finger landing on a card ticks here too. */
+          onPointerDown={(event) => {
+            void speaker();
+            const input =
+              event.target instanceof Element
+                ? event.target.closest("input[data-haptic]")
+                : null;
+            const thumb = input instanceof HTMLInputElement ? input : null;
+            if (isContact(event.pointerType)) {
+              feel.down(thumb, event.clientX, event.clientY);
+              fingerMeets(event.clientX, event.clientY);
+              return;
+            }
+            /* Trackpad: Safari starts tracking on this press, and only then.
+               Leave the switch where it is until the pointer actually moves,
+               or the origin WebKit records is already the leapfrogged one
+               and the slide never crosses it. */
+            if (!thumb) return;
+            feel.down(thumb, event.clientX, event.clientY, 0);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -617,6 +677,7 @@ export function FanDeck() {
           {blades.map((blade) => (
             <div
               key={blade.i}
+              data-blade={blade.i}
               className={styles.blade}
               style={
                 {
@@ -631,8 +692,11 @@ export function FanDeck() {
                   "--edge": blade.edge,
                 } as React.CSSProperties
               }
-              onPointerEnter={() => {
-                if (open) play("hover");
+              onPointerEnter={(event) => {
+                /* The slide is handled on pointermove. pointerenter doesn't
+                   follow a pressed pointer, and would tick twice where it does. */
+                if (isContact(event.pointerType) || event.buttons > 0) return;
+                fingerMeets(event.clientX, event.clientY);
               }}
             >
               <div className={styles.body}>
@@ -652,6 +716,21 @@ export function FanDeck() {
                   </span>
                 ))}
               </span>
+              {switchTick && (
+                <input
+                  ref={armSwitch}
+                  type="checkbox"
+                  data-haptic=""
+                  className={styles.switch}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  onClick={(event) => {
+                    if (feel.consumeClick(open) === "tap") return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                />
+              )}
             </div>
           ))}
 
